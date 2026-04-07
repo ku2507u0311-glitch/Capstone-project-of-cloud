@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #ecf0f1;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-color);
+            padding: 40px;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            margin-bottom: 20px;
+        }
+        h2 {
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        input { 
+            width: calc(100% - 130px); 
+            padding: 10px; 
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+            margin-right: 10px;
+        }
+        button { 
+            padding: 10px 20px; 
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        button:hover { background-color: #2980b9; }
+        .flex-row { display: flex; justify-content: space-between; }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid #ddd;
+        }
+        th { background-color: var(--primary-color); color: white; }
+        #eventMsg { font-weight: bold; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Add New Event</h2>
+        <form id="addEventForm" class="flex-row">
+            <input type="text" id="newEventName" placeholder="Enter new event name" required>
+            <button type="submit">Add Event</button>
+        </form>
+        <p id="eventMsg"></p>
+    </div>
+
+    <div class="container">
+        <h2>Registered Students</h2>
+        <button onclick="loadRegistrations()">Refresh List</button>
+        <table>
+            <thead>
+                <tr>
+                    <th>Student Name</th>
+                    <th>Event Registered</th>
+                </tr>
+            </thead>
+            <tbody id="registrationTableBody">
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.getElementById('addEventForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const eventName = document.getElementById('newEventName').value;
+            const msgElement = document.getElementById('eventMsg');
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/events', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ event_name: eventName })
+                });
+
+                const result = await response.json();
+                
+                if (response.ok) {
+                    msgElement.style.color = "#27ae60";
+                    msgElement.textContent = result.message;
+                    document.getElementById('addEventForm').reset();
+                } else {
+                    msgElement.style.color = "#e74c3c";
+                    msgElement.textContent = result.error;
+                }
+            } catch (error) {
+                msgElement.style.color = "#e74c3c";
+                msgElement.textContent = "Server connection failed.";
+            }
+        });
+
+        async function loadRegistrations() {
+            const tableBody = document.getElementById('registrationTableBody');
+            tableBody.innerHTML = '<tr><td colspan="2">Loading...</td></tr>';
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/registrations');
+                const data = await response.json();
+
+                tableBody.innerHTML = '';
+                
+                if (data.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="2">No registrations yet.</td></tr>';
+                    return;
+                }
+
+                data.forEach(reg => {
+                    const row = document.createElement('tr');
+                    const nameCell = document.createElement('td');
+                    const eventCell = document.createElement('td');
+                    
+                    nameCell.textContent = reg.name;
+                    eventCell.textContent = reg.event;
+                    
+                    row.appendChild(nameCell);
+                    row.appendChild(eventCell);
+                    tableBody.appendChild(row);
+                });
+            } catch (error) {
+                tableBody.innerHTML = '<tr><td colspan="2" style="color:red;">Failed to load data.</td></tr>';
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', loadRegistrations);
+    </script>
+</body>
+</html>

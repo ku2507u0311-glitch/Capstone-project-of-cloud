@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Karnavati University Event Registration</title>
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --accent-color: #3498db;
+            --bg-color: #ecf0f1;
+        }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: var(--bg-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary-color);
+            margin-top: 0;
+            margin-bottom: 25px;
+            font-size: 24px;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        input, select { 
+            width: 100%; 
+            padding: 12px; 
+            margin-bottom: 20px; 
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            box-sizing: border-box;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+        }
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--accent-color);
+            box-shadow: 0 0 5px rgba(52, 152, 219, 0.3);
+        }
+        button { 
+            width: 100%; 
+            padding: 14px; 
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        #message {
+            text-align: center;
+            font-weight: bold;
+            margin-top: 15px;
+            min-height: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Karnavati University Registration</h2>
+        <form id="regForm">
+            <label for="name">Full Name</label>
+            <input type="text" id="name" name="name" placeholder="Enter your name" required>
+
+            <label for="event">Select Event</label>
+            <select id="event" name="event" required>
+                <option value="" disabled selected>Loading events...</option>
+            </select>
+
+            <button type="submit">Register Now</button>
+        </form>
+        <p id="message"></p>
+    </div>
+
+    <script>
+        window.addEventListener('DOMContentLoaded', async () => {
+            const eventDropdown = document.getElementById('event');
+            try {
+                const response = await fetch('http://127.0.0.1:5000/events');
+                const events = await response.json();
+                
+                eventDropdown.innerHTML = '<option value="" disabled selected>Choose an event...</option>';
+                events.forEach(eventName => {
+                    const option = document.createElement('option');
+                    option.value = eventName;
+                    option.textContent = eventName;
+                    eventDropdown.appendChild(option);
+                });
+            } catch (error) {
+                eventDropdown.innerHTML = '<option value="" disabled>Error loading events</option>';
+            }
+        });
+
+        document.getElementById('regForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('name').value;
+            const event = document.getElementById('event').value;
+            const msgElement = document.getElementById('message');
+
+            msgElement.textContent = "Registering...";
+            msgElement.style.color = "#555";
+
+            try {
+                const response = await fetch('http://127.0.0.1:5000/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, event })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    msgElement.style.color = "#27ae60"; 
+                    msgElement.textContent = result.message;
+                    document.getElementById('regForm').reset();
+                } else {
+                    msgElement.style.color = "#e74c3c"; 
+                    msgElement.textContent = "Error: " + result.error;
+                }
+            } catch (error) {
+                msgElement.style.color = "#e74c3c";
+                msgElement.textContent = "Server connection failed.";
+            }
+        });
+    </script>
+</body>
+</html>
